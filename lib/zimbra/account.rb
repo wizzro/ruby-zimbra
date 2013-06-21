@@ -23,7 +23,7 @@ module Zimbra
       end
     end
 
-    attr_accessor :id, :name, :password, :acls, :cos_id, :delegated_admin
+    attr_accessor :id, :name, :password, :acls, :cos_id, :delegated_admin, :mail_host, :status
 
     def initialize(options = {})
       self.id = options[:id]
@@ -31,7 +31,9 @@ module Zimbra
       self.password = options[:password]
       self.acls = options[:acls] || []
       self.cos_id = (options[:cos] ? options[:cos].id : options[:cos_id])
+			self.mail_host = options[:mail_host]
       self.delegated_admin = options[:delegated_admin]
+      self.status = options[:status]
     end
 
     def delegated_admin=(val)
@@ -48,6 +50,14 @@ module Zimbra
     def delete
       AccountService.delete(self)
     end
+
+		def lock
+			AccountService.lock(self)
+		end
+
+		def unlock
+			AccountService.unlock(self)
+		end
   end
 
   class AccountService < HandsoapService
@@ -92,6 +102,20 @@ module Zimbra
       end
     end
 
+    def lock(account)
+      xml = invoke("n2:ModifyAccountRequest") do |message|
+        Builder.lock(message, account)
+      end
+      Parser.account_response(xml/'//n2:account')
+    end
+
+    def unlock(account)
+      xml = invoke("n2:ModifyAccountRequest") do |message|
+        Builder.unlock(message, account)
+      end
+      Parser.account_response(xml/'//n2:account')
+    end
+
     class Builder
       class << self
         def create(message, account)
@@ -112,9 +136,19 @@ module Zimbra
           end
         end
 
+        def lock(message, account)
+          message.add 'id', account.id
+					A.inject(message, 'zimbraAccountStatus', 'locked')
+        end
+
+        def unlock(message, account)
+          message.add 'id', account.id
+					A.inject(message, 'zimbraAccountStatus', 'lockout')
+        end
+
         def modify(message, account)
           message.add 'id', account.id
-          modify_attributes(message, distribution_list)
+          #A.inject(message, 'zimbraAccountStatus', 'lockout')
         end
         def modify_attributes(message, account)
           if account.acls.empty?
@@ -136,6 +170,7 @@ module Zimbra
     class Parser
       class << self
         def get_all_response(response)
+					p response
           (response/"//n2:account").map do |node|
             account_response(node)
           end
@@ -147,7 +182,9 @@ module Zimbra
           acls = Zimbra::ACL.read(node)
           cos_id = Zimbra::A.read(node, 'zimbraCOSId')
           delegated_admin = Zimbra::A.read(node, 'zimbraIsDelegatedAdminAccount')
-          Zimbra::Account.new(:id => id, :name => name, :acls => acls, :cos_id => cos_id, :delegated_admin => delegated_admin)
+          mail_host = Zimbra::A.read(node, 'zimbraMailHost')
+          status = Zimbra::A.read(node, 'zimbraAccountStatus')
+          Zimbra::Account.new(:id => id, :name => name, :acls => acls, :cos_id => cos_id, :delegated_admin => delegated_admin, :mail_host => mail_host, :status => status)
         end
       end
     end
