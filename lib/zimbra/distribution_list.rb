@@ -64,6 +64,9 @@ module Zimbra
   class DistributionListService < HandsoapService
     def all
       xml = invoke("n2:GetAllDistributionListsRequest")
+      #xml = invoke("n2:GetAllDistributionListsRequest") do |message|
+			#	 Builder.essai(message)
+			#end
       Parser.get_all_response(xml)
     end
 
@@ -128,6 +131,11 @@ module Zimbra
 
     module Builder
       class << self
+				def essai(message)
+					message.add 'domain', 'etu.upmf-grenoble.fr' do |d|
+						d.set_attr 'by', 'name'
+					end
+				end
         def create(message, name)
           message.add 'name', name
         end

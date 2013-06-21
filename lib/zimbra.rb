@@ -7,6 +7,13 @@ require 'zimbra/distribution_list'
 require 'zimbra/account'
 require 'zimbra/acl'
 require 'zimbra/common_elements'
+require 'zimbra/quota_usage'
+require 'zimbra/mailbox'
+require 'zimbra/distribution_list'
+require 'zimbra/version'
+require 'zimbra/license'
+require 'zimbra/mailqueue'
+require 'zimbra/sessions'
 
 # Manages a Zimbra SOAP session.  Offers ability to set the endpoint URL, log in, and enable debugging.
 module Zimbra
@@ -48,7 +55,7 @@ module Zimbra
 
     # re-log into the zimbra SOAP service
     def reset_login(username, password)
-      puts "Logging into zimbra as #{username}"
+      #puts "Logging into zimbra as #{username}"
       @@auth_token = Auth.login(username, password)
     end
   end
