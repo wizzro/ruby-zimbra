@@ -143,7 +143,7 @@ module Zimbra
 
         def unlock(message, account)
           message.add 'id', account.id
-					A.inject(message, 'zimbraAccountStatus', 'lockout')
+					A.inject(message, 'zimbraAccountStatus', 'active')
         end
 
         def modify(message, account)
